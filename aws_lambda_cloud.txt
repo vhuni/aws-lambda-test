@@ -1,16 +1,39 @@
 
-Connecting to AWS services
---------------------------
-
---------------------------
 
 Creating a Lambda function
 --------------------------
+- Lambda services
+- Functions (Create Functions)
 
+example:
+    import pandas as pd
+    def lambda_handler(event,context):
+        p = {1,2,3,4,5}
+        data = pd.DataFrame(p)
+        print(data)
+
+- Add Layers (Under Additional Resources)
+    - Create Layers
+    - Compatible runtimes (Python 3.10, 3.9)
+    - Compatible architecture (x86_64)
+
+- Click on Layers under Lambda function
+    - Add/Edit Layer
 --------------------------
 
-Creating a CloudWatch Event
+Creating a CloudWatch Event (EventBrdige)
 ---------------------------
+- Schedules
+    - Create Schedule
+    - Schedule Pattern
+    - Recurring Schedule
+    - Cron-based Schedule
+    - Select Target
+    - Retry Policy
+    - Save Schedule
+- Cloudwatch Log Groups
+    - Create Log Group
+    - Select Tag Name
 
 ---------------------------
 

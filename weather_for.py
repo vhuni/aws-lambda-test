@@ -1,50 +1,40 @@
-import os
-import sys
 import requests
-import json
 import pandas as pd
-from datetime import datetime, date, timedelta, timezone
+from datetime import date
 import boto3
-import csv
+from io import StringIO
 
 
-def lambda_handler(event, context):
-    api_key = 'api_here'
-    url = 'https://api.openweathermap.org/data/2.5/onecall/timemachine'
-    yesterday = datetime.now() - timedelta(days=1)
-    timestamp = round(datetime.timestamp(yesterday))
-    params = {
-        'lat': '53.349805',
-        'lon': '-6.26031',
-        'units': 'metric',
-        'dt': timestamp,
-        'appid': api_key
-    }
-    # Fetch hourly weather data in Dublin from OpenWeatherMap API
-    input_file = requests.get(url=url, params=params)
+def lambda_handler():
+    api_key = 'openweather api'
+    url = f'https://api.openweathermap.org/data/2.5/weather?q=London&appid={api_key}'
+    date_now = date.today()
+    input_file = requests.get(url=url)
     result_json = input_file.json()
-    # Flatten and clean hourly weather data
-    weather_data = pd.json_normalize(data=result_json['hourly'], record_path='weather',
-                                    meta=['dt', 'temp', 'feels_like', 'clouds'])
-    weather_data = weather_data.drop(['main', 'description', 'icon', 'temp', 'clouds'], 1)
-    weather_data['dt'] = weather_data['dt'].apply(lambda x: datetime.fromtimestamp(x))
-    date = weather_data['dt'][0].strftime("%m-%d-%Y")
-    weather_data['dt'] = weather_data['dt'].apply(lambda x: x.strftime("%m/%d/%Y %H:%M:%S"))
-    weather_data = weather_data.drop(weather_data.index[21:])
-    weather_data = weather_data.drop(weather_data.index[:6])
-    csv_data = weather_data.to_csv(index=False)
+
+    weather_data = pd.json_normalize(data=result_json['weather'])
+    df = pd.DataFrame.from_dict(pd.json_normalize(data=result_json), orient='columns')
+    df = df.drop(['weather'],1)
+    result = pd.concat([weather_data, df], axis=1, join="inner")
+    result = result.drop(['id', 'icon', 'cod', 'base', 'sys.country', 'sys.id', 'sys.type'],1)
+    result['dt'] = pd.to_datetime(result['dt'], unit='s')
+    result['sys.sunrise'] = pd.to_datetime(result['sys.sunrise'], unit='s')
+    result['sys.sunset'] = pd.to_datetime(result['sys.sunset'], unit='s')
+    result['dt'] = result['dt'].apply(lambda x: x.strftime("%d/%m/%Y %H:%M:%S"))
+    result['sys.sunrise'] = result['sys.sunrise'].apply(lambda x: x.strftime("%d/%m/%Y %H:%M:%S"))
+    result['sys.sunset'] = result['sys.sunset'].apply(lambda x: x.strftime("%d/%m/%Y %H:%M:%S"))
+    print(result.info())
+    print(result)
+    csv_buffer = StringIO()
+    result.to_csv(csv_buffer, index=False)
 
     #call your s3 bucket
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket('your_bucket_name_here')
-    key = '{}.csv'.format(date)
+    s3 = boto3.client('s3', aws_access_key_id='key here', aws_secret_access_key='secret key here')
+    bucket = 'bucket name'
+    key = f'{date_now}.csv'
 
-    with open("/tmp/{}.csv".format(date), 'w') as f:
-        csv_writer = csv.writer(f, delimiter=",")
-        csv_reader = csv.reader(csv_data.splitlines())
-        # Iterate over each row in the csv using reader object
-        for row in csv_reader:
-            # row variable is a list that represents a row in csv
-            csv_writer.writerow(row)
-    #upload the data into s3
-    bucket.upload_file("/tmp/{}.csv".format(date), key)
+    s3.put_object(Bucket=bucket, Key=key, Body=csv_buffer.getvalue())
+
+
+if __name__ == "__main__":
+    lambda_handler()
