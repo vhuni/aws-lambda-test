@@ -1,4 +1,4 @@
-# Testing AWS Lambda, Cloudwatch and SNS Services using Python code to fetch weather data for London and upload it to an S3 bucket while notifying subscribers via SNS.
+# Testing AWS Lambda, Cloudwatch and SNS Services using Python code to fetch weather data for London and upload it to an S3 bucket while notifying subscribers via SMS.
 
  This code fetches the weather data for London from the OpenWeather API and formats the data into a Pandas DataFrame. The formatted data is then uploaded to an S3 bucket and sent via SNS.
 
