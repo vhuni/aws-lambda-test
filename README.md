@@ -5,6 +5,8 @@
 ## Prerequisites
 - A valid OpenWeather API key.
 - A configured AWS S3 bucket.
+- Created Topic and Subscribers in AWS SNS
+- Policy Permissions on IAM for Lambda, Cloudwatch(EventBridge) and SNS
 - Python 3.x.
 - Required libraries: Pandas, Boto3, Requests, and StringIO.
 
